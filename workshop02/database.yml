@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: myns
+    labels:
+        name: myns
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: nwdb-deploy
+    namespace: myns
+    labels:
+        name: nwdb-deploy
+        verson: "v1"
+
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            name: nwdb-pod
+    template:
+        metadata:
+            name: nwdb-pod
+            labels:
+                name: nwdb-pod
+        spec:
+            containers:
+                - name: nwdb-containers
+                  image: stackupiss/northwind-db:v1
+                  imagePullPolicy: Always
+                  ports:
+                      - name: nwdb-sql
+                        containerPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: nwdb-service
+    namespace: myns
+    labels:
+        name: nwdb-service
+
+spec:
+    selector:
+        name: nwdb-pod
+    ports:
+        - name: sql
+          port: 3306
+          targetPort: nwdb-sql                        

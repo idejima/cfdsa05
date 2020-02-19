@@ -1,0 +1,80 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: nwapp-configmap
+    namespace: myns
+    labels:
+        name: nwapp-configmap
+data:
+    DB_USER: root
+    DB_HOST: nwdb-service.myns.svc.cluster.local
+---
+apiVersion: v1
+kind: Secret
+metadata:
+      name: nwapp-secret
+      namespace: myns
+
+data:
+    DB_PASSWORD: Y2hhbmdlaXQ=
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: nwapp-deploy
+    namespace: myns
+    labels:
+        name: nwapp-deploy
+        verson: "v1"
+
+spec:
+    replicas: 3
+    selector:
+        matchLabels:
+            name: nwapp-pod
+    strategy:
+        type: RollingUpdate
+        rollingUpdate:
+            maxSurege: 1
+            maxUnavailable: 1
+    template:
+        metadata:
+            name: nwapp-pod
+            labels:
+                name: nwapp-pod
+        spec:
+            containers:
+                - name: nwapp-containers
+                  image: stackupiss/northwind-app:v1
+                  imagePullPolicy: Always
+                  env:
+                      - name: INSTANCE_IP_ADDRESS
+                        valueFrom:
+                            fieldRef:
+                                fieldPath: status.podIP
+                  envFrom:
+                      - configMapRef:
+                          name: nwapp-configmap
+                      - secretRef:
+                          name: nwapp-secret
+                  ports:
+                      - name: nwapp-http
+                        containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: nwapp-service
+    namespace: myns
+    labels:
+        name: nwapp-service
+
+spec:
+    type: LoadBalancer
+    selector:
+        name: nwapp-pod
+    ports:
+        - name: http
+          port: 80
+          targetPort: nwapp-http
