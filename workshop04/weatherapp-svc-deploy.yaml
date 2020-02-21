@@ -1,0 +1,35 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: weatherapp-svc
+spec:
+  selector:
+    name:  weatherapp
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 3000
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weatherapp-deployment
+spec:
+  selector:
+    matchLabels:
+      name: weatherapp
+  template:
+    metadata:
+      labels:
+        name: weatherapp
+    spec:
+      containers:
+      - name: weaatherapp
+        image: stackupiss/weather:v1
+        env:
+          - name: "APP_ID"
+            value: "deac68d905e4604340079594989e83ee"
+        ports:
+        - containerPort: 3000
